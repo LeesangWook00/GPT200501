@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>로또 번호 추첨기</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f2f2f2;
+      text-align: center;
+      padding: 50px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    #lotto-numbers {
+      margin: 30px auto;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .ball {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+    .yellow { background: linear-gradient(to bottom, #ffe066, #ffcc00); }
+    .blue   { background: linear-gradient(to bottom, #66b2ff, #0066cc); }
+    .red    { background: linear-gradient(to bottom, #ff6666, #cc0000); }
+    .gray   { background: linear-gradient(to bottom, #cccccc, #666666); }
+    .green  { background: linear-gradient(to bottom, #66cc66, #339933); }
+
+    button {
+      padding: 12px 24px;
+      font-size: 18px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    #history {
+      margin-top: 40px;
+    }
+
+    .history-set {
+      margin: 10px 0;
+    }
+
+    .ball-history {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      line-height: 40px;
+      margin: 0 5px;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>로또 번호 추첨기</h1>
+  <div id="lotto-numbers"></div>
+  <button onclick="toggleDraw()">시작 / 초기화</button>
+  <button onclick="saveManually()">📥 저장</button>
+  <button onclick="clearHistory()">🗑 기록 초기화</button>
+
+  <div id="history">
+    <h3>이전 결과</h3>
+    <div id="saved-results"></div>
+  </div>
+
+  <script>
+    let isDrawing = false;
+    let interval;
+    let numbers = [];
+
+    function getRandomLottoNumbers() {
+      const lottoSet = new Set();
+      while (lottoSet.size < 6) {
+        lottoSet.add(Math.floor(Math.random() * 45) + 1);
+      }
+      return Array.from(lottoSet).sort((a, b) => a - b);
+    }
+
+    function getBallColorClass(number) {
+      if (number <= 10) return 'yellow';
+      else if (number <= 20) return 'blue';
+      else if (number <= 30) return 'red';
+      else if (number <= 40) return 'gray';
+      else return 'green';
+    }
+
+    function createBall(number, className = 'ball') {
+      const ball = document.createElement('div');
+      ball.className = `${className} ${getBallColorClass(number)}`;
+      ball.textContent = number;
+      return ball;
+    }
+
+    function toggleDraw() {
+      const container = document.getElementById('lotto-numbers');
+
+      if (isDrawing) {
+        clearInterval(interval);
+        container.innerHTML = '';
+        isDrawing = false;
+      } else {
+        container.innerHTML = '';
+        numbers = getRandomLottoNumbers();
+        let index = 0;
+
+        interval = setInterval(() => {
+          if (index < numbers.length) {
+            const ball = createBall(numbers[index]);
+            container.appendChild(ball);
+            index++;
+          } else {
+            clearInterval(interval);
+            isDrawing = false;
+          }
+        }, 500);
+
+        isDrawing = true;
+      }
+    }
+
+    function saveManually() {
+      if (numbers.length !== 6) {
+        alert('먼저 번호를 추첨해주세요!');
+        return;
+      }
+
+      let history = JSON.parse(localStorage.getItem('lottoHistory')) || [];
+      history.push(numbers);
+      localStorage.setItem('lottoHistory', JSON.stringify(history));
+      displaySavedResults();
+    }
+
+    function displaySavedResults() {
+      const savedDiv = document.getElementById('saved-results');
+      savedDiv.innerHTML = '';
+
+      let history = JSON.parse(localStorage.getItem('lottoHistory')) || [];
+
+      history.slice().reverse().forEach(set => {
+        const setDiv = document.createElement('div');
+        setDiv.className = 'history-set';
+
+        set.forEach(number => {
+          const ball = createBall(number, 'ball-history');
+          setDiv.appendChild(ball);
+        });
+
+        savedDiv.appendChild(setDiv);
+      });
+    }
+
+    function clearHistory() {
+      localStorage.removeItem('lottoHistory');
+      displaySavedResults();
+    }
+
+    window.onload = displaySavedResults;
+  </script>
+
+</body>
+</html>
